@@ -1,1595 +1,779 @@
-# 🐧 Linux Commands for Archives and Compression
+# 🐧 Linux User and Group Management
 
-> **Linux & DevOps Learning Journey — Archives**
+> **Linux & DevOps Learning Journey — User and Group Management**
 
-This guide covers Linux archive and compression commands from the perspective of a DevOps engineer, focusing on application backups, deployment packages, log archiving, storage optimization, and production recovery.
+In Linux, user and group management is an essential responsibility for system administrators and DevOps engineers.
+
+Every user accessing a Linux server has an identity, permissions, and group memberships. Managing these correctly helps maintain server security, control access, and prevent unauthorized operations.
+
+This topic covers commands used to identify logged-in users, inspect user and group information, and create, modify, or delete users and groups.
+
+---
 
 ## 📚 Table of Contents
 
-1. [Introduction](#-introduction)
-2. [Understanding Archives and Compression](#1-understanding-archives-and-compression)
-3. [tar – Working with TAR Archives](#2-tar--working-with-tar-archives)
-4. [tar -v – Verbose Output](#3-tar--v--verbose-output)
-5. [tar -cf – Create TAR Archives](#4-tar--cf--create-tar-archives)
-6. [tar -xf – Extract TAR Archives](#5-tar--xf--extract-tar-archives)
-7. [tar -tf – List TAR Contents](#6-tar--tf--list-tar-contents)
-8. [tar -czf and tar -xzf – GZIP Compression](#7-tar--czf-and-tar--xzf--gzip-compression)
-9. [tar -cjf and tar -xjf – BZIP2 Compression](#8-tar--cjf-and-tar--xjf--bzip2-compression)
-10. [gzip – GZIP Compression Utility](#9-gzip--gzip-compression-utility)
-11. [gzip -l – Display GZIP Information](#10-gzip--l--display-gzip-information)
-12. [gzip -d and gunzip – Extract GZIP Files](#11-gzip--d-and-gunzip--extract-gzip-files)
-13. [bzip2 – BZIP2 Compression Utility](#12-bzip2--bzip2-compression-utility)
-14. [bzip2 -d and bunzip2 – Extract BZIP2 Files](#13-bzip2--d-and-bunzip2--extract-bzip2-files)
-15. [zip -r – Create ZIP Archives](#14-zip--r--create-zip-archives)
-16. [unzip – Extract ZIP Archives](#15-unzip--extract-zip-archives)
-17. [unzip -l – List ZIP Contents](#16-unzip--l--list-zip-contents)
-18. [Real-World Production Scenario](#-real-world-production-scenario)
-19. [Quick Command Reference](#-quick-command-reference)
-20. [Interview Questions](#-interview-questions)
+1. 👥 [Checking Logged-in Users](#1--checking-logged-in-users)
+2. 🪪 [Identifying the Current User](#2--identifying-the-current-user)
+3. 🔍 [Understanding User and Group IDs](#3--understanding-user-and-group-ids)
+4. 🕒 [Checking Login History](#4--checking-login-history)
+5. 👨‍👩‍👧 [Creating and Managing Groups](#5--creating-and-managing-groups)
+6. 👤 [Creating Linux Users](#6--creating-linux-users)
+7. 🗑️ [Deleting Linux Users](#7--deleting-linux-users)
+8. 🔧 [Modifying User Accounts](#8--modifying-user-accounts)
+9. 🚀 [Real-World Production Scenario](#9--real-world-production-scenario)
+10. 📌 [Quick Command Reference](#10--quick-command-reference)
+11. 🎯 [Interview Questions](#11--interview-questions)
+12. 🧪 [Hands-On Practice](#12--hands-on-practice)
 
 ---
 
 ## 🎯 Introduction
 
-Archives and compression are important concepts in Linux system administration and DevOps engineering.
+Linux is a multi-user operating system. Multiple users can access the same server simultaneously, and each user can have different permissions.
 
-Imagine you're working as a DevOps engineer managing an application on an AWS EC2 instance.
+For example, imagine a production server where:
 
-Your company has multiple application directories containing:
+- Developers need access to application files.
+- DevOps engineers need permission to manage deployments.
+- Database administrators need access to database-related resources.
+- System administrators need elevated privileges.
 
-- Application source code.
-- Configuration files.
-- Database backup files.
-- Application logs.
-- Deployment scripts.
-- Static resources.
+Instead of giving everyone unrestricted access, Linux allows administrators to create individual accounts and organize users into groups.
 
-Your manager asks you to create a backup before deploying a new application version.
+**DevOps Insight:**
 
-You cannot manually copy every file individually.
-
-Instead, you need to:
-
-- Package multiple files into a single archive.
-- Compress application backups to save storage.
-- Extract deployment packages.
-- Inspect archive contents before extraction.
-- Transfer compressed backups to another server.
-- Restore application files when a deployment fails.
-
-This is where Linux archive and compression commands become essential.
+In production environments, user and group management is important for access control, auditing, and the principle of least privilege.
 
 ---
 
-## 1. Understanding Archives and Compression
+## 1. 👥 Checking Logged-in Users
 
-Before learning the commands, understand two important concepts.
+These commands help administrators identify who is currently connected to a Linux system.
 
-### 1. What Is an Archive?
+### 1.1 `who` — Display Logged-in Users
 
-An archive combines multiple files and directories into a single file.
+**Syntax:**
 
-For example, suppose your application has:
-
-```text
-myapp/
-│
-├── app.py
-├── config/
-│   └── database.conf
-│
-├── logs/
-│   └── application.log
-│
-└── scripts/
-    └── deploy.sh
+```bash
+who
 ```
 
-Instead of transferring every file individually, you can package the entire directory into one archive.
+Displays information about users currently logged into the system.
 
-For example:
+**Example:**
 
-```text
-myapp.tar
+```bash
+who
 ```
 
-Now all the selected files and directories are packaged into a single file.
+**Output:**
 
-### 2. What Is Compression?
+```text
+alice    pts/0        2026-11-21 09:30
+bob      pts/1        2026-11-21 09:45
+```
 
-Compression reduces the storage space required by data.
+**Understanding the output:**
 
-For example:
-
-Suppose your application backup is 500 MB.
-
-After compression, it might become 150 MB, depending on the file contents and compression algorithm.
-
-This makes it easier to store and transfer backups.
-
-### Understanding the Difference
-
-| Concept | Purpose |
+| Field | Meaning |
 |---|---|
-| Archiving | Combines files and directories into one package |
-| Compression | Reduces the size of data |
-| Extraction | Retrieves files from an archive |
-| Decompression | Restores compressed data |
+| alice / bob | Username |
+| pts/0 / pts/1 | Terminal session |
+| Date | Login date |
+| Time | Login time |
 
-### Common Linux Archive Formats
+**DevOps Insight:**
 
-| Extension | Description |
+When investigating unexpected server activity, `who` helps identify users who currently have active login sessions.
+
+### 1.2 `w` — Display What Users Are Doing
+
+**Syntax:**
+
+```bash
+w
+```
+
+Displays currently logged-in users along with their activity and system information.
+
+**Example:**
+
+```bash
+w
+```
+
+**Output:**
+
+```text
+20:30:10 up 12 days,  4:15,  2 users, load average: 0.25, 0.18, 0.12
+
+USER   TTY    FROM       LOGIN@   IDLE   JCPU   PCPU  WHAT
+alice  pts/0  10.0.0.10  09:30    2:00   0.10s  0.02s  bash
+bob    pts/1  10.0.0.11  09:45    0.00s  0.15s  0.05s  top
+```
+
+**Understanding the output:**
+
+| Field | Meaning |
 |---|---|
-| `.tar` | TAR archive without compression |
-| `.tar.gz` | TAR archive compressed using gzip |
-| `.tgz` | Alternative extension for `.tar.gz` |
-| `.tar.bz2` | TAR archive compressed using bzip2 |
-| `.gz` | GZIP-compressed file |
-| `.bz2` | BZIP2-compressed file |
-| `.zip` | ZIP archive with compression |
+| USER | Logged-in username |
+| TTY | Terminal |
+| FROM | Remote host or IP address |
+| LOGIN@ | Login time |
+| IDLE | Time since last activity |
+| JCPU | CPU time used by terminal-related processes |
+| PCPU | CPU time used by the current process |
+| WHAT | Current command or activity |
 
-**DevOps Insight:** Archiving and compression are frequently used for application backups, log management, deployment packages, and transferring data between servers.
+**DevOps Insight:**
+
+Suppose a production server is experiencing high CPU usage. Running `w` helps you see which users are logged in and what commands they are running.
+
+### 1.3 `users` — List Current Users
+
+**Syntax:**
+
+```bash
+users
+```
+
+Displays the usernames of users currently logged in.
+
+**Example:**
+
+```bash
+users
+```
+
+**Output:**
+
+```text
+alice bob root
+```
+
+Unlike `who` and `w`, this command provides a simple list of usernames without detailed session information.
+
+**DevOps Insight:**
+
+Useful for quickly checking which user accounts have active sessions.
 
 ---
 
-## 2. `tar` – Working with TAR Archives
+## 2. 🪪 Identifying the Current User
 
-**Purpose:** Creates, extracts, and manages archives with the `.tar` extension.
+### 2.1 `whoami` — Display Current Username
 
-The `tar` command is one of the most commonly used archive utilities in Linux.
-
-The name TAR comes from *Tape Archive*.
-
-Originally, it was used to package files for storage on tape devices. Today, it is widely used for backups and software distribution.
-
-### Syntax
+**Syntax:**
 
 ```bash
-tar [options] archive_name files_or_directories
+whoami
 ```
 
-### Example
+Displays the username of the account running the current command.
+
+**Example:**
 
 ```bash
-tar -cf backup.tar myapp/
+whoami
 ```
 
-This creates an archive named `backup.tar` containing the `myapp` directory.
+**Output:**
 
-### Understanding the Command
+```text
+jasin
+```
+
+If you switch to another user, the output changes.
 
 ```bash
-tar -cf backup.tar myapp/
+sudo -i
+whoami
 ```
 
-| Part | Meaning |
+**Output:**
+
+```text
+root
+```
+
+**DevOps Insight:**
+
+Before executing administrative commands or deployment scripts, checking the current user helps prevent accidentally running operations with the wrong account.
+
+---
+
+## 3. 🔍 Understanding User and Group IDs
+
+### 3.1 `id` — Display User and Group Information
+
+**Syntax:**
+
+```bash
+id
+```
+
+Displays the current user's UID, primary group ID, and supplementary group memberships.
+
+**Example:**
+
+```bash
+id
+```
+
+**Output:**
+
+```text
+uid=1000(jasin) gid=1000(jasin) groups=1000(jasin),27(sudo),1001(devops)
+```
+
+**Understanding the output:**
+
+| Field | Meaning |
 |---|---|
-| `tar` | Archive utility |
-| `-c` | Create an archive |
-| `-f` | Specify the archive filename |
-| `backup.tar` | Name of the archive |
-| `myapp/` | Directory being archived |
+| uid | User ID (UID) |
+| gid | Primary Group ID (GID) |
+| groups | All groups the user belongs to |
 
-### Real-World Scenario
+**Important concepts:**
 
-Imagine your application is running on an AWS EC2 Ubuntu server.
+- **UID:** A numerical identifier assigned to a Linux user.
+- **GID:** A numerical identifier assigned to a Linux group.
+- **Primary group:** The main group associated with the user.
+- **Supplementary groups:** Additional groups that provide extra permissions.
 
-Your application directory is:
+You can also inspect another user:
+
+```bash
+id alice
+```
+
+**Example output:**
 
 ```text
-/var/www/myapp/
+uid=1001(alice) gid=1001(alice) groups=1001(alice),1002(developers)
 ```
 
-Before deploying a new version, your manager asks you to create a backup.
+**DevOps Insight:**
 
-Execute:
-
-```bash
-tar -cf myapp_backup.tar /var/www/myapp/
-```
-
-You have now packaged the application directory into one TAR archive.
-
-Check the resulting file:
-
-```bash
-ls -lh myapp_backup.tar
-```
-
-**DevOps Insight:** TAR is useful when you need to package multiple files and directories while preserving their directory structure and relevant filesystem metadata.
+When a developer cannot access an application directory, checking their group memberships using `id username` is a useful troubleshooting step.
 
 ---
 
-## 3. `tar -v` – Verbose Output
+## 4. 🕒 Checking Login History
 
-**Purpose:** Displays detailed information about files while creating, extracting, or listing TAR archives.
+### 4.1 `last` — Display Previous Login Sessions
 
-The `-v` option means verbose.
-
-It shows which files are being processed.
-
-### Syntax
+**Syntax:**
 
 ```bash
-tar -cvf archive.tar directory/
+last
 ```
 
-### Example
+Displays information about previous login sessions.
+
+**Example:**
 
 ```bash
-tar -cvf backup.tar myapp/
+last
 ```
 
-Possible output:
+**Output:**
 
 ```text
-myapp/
-myapp/app.py
-myapp/config/
-myapp/config/database.conf
-myapp/logs/
-myapp/logs/application.log
-myapp/scripts/
-myapp/scripts/deploy.sh
+alice    pts/0    10.0.0.10    Fri Nov 21 09:30   still logged in
+bob      pts/1    10.0.0.11    Fri Nov 21 08:45 - 10:15
+reboot   system boot            Fri Nov 21 06:00
 ```
 
-Without `-v`, TAR normally performs the operation without listing each file.
+**Understanding the output:**
 
-### Understanding the Difference
+| Field | Meaning |
+|---|---|
+| Username | Account that logged in |
+| Terminal | Login terminal |
+| IP address | Remote connection address, when available |
+| Login time | When the session started |
+| Session status | Whether the session is still active or has ended |
 
-Without verbose output:
+**Useful variations:**
 
 ```bash
-tar -cf backup.tar myapp/
+last -n 5
 ```
 
-With verbose output:
+Displays the five most recent login records.
 
 ```bash
-tar -cvf backup.tar myapp/
+last alice
 ```
 
-The second command displays the files being added to the archive.
+Displays login history for the user `alice`.
 
-### Real-World Scenario
+**DevOps Insight:**
 
-Imagine you're backing up a production application containing thousands of files.
-
-You execute:
-
-```bash
-tar -cvf production_backup.tar /var/www/myapp/
-```
-
-The terminal displays the files being archived.
-
-This helps you verify which files are included in the operation.
-
-### Another Useful Example
-
-List archive contents with verbose output:
-
-```bash
-tar -tvf backup.tar
-```
-
-This displays details such as permissions, ownership, size, timestamps, and filenames.
-
-**DevOps Insight:** Verbose output is useful when monitoring backup operations and troubleshooting missing files. For very large archives, verbose output can generate substantial terminal output.
+When investigating suspicious access to a server, `last` can help administrators review historical login sessions.
 
 ---
 
-## 4. `tar -cf` – Create TAR Archives
+## 5. 👨‍👩‍👧 Creating and Managing Groups
 
-**Purpose:** Creates an uncompressed TAR archive containing specified files or directories.
+Linux groups allow administrators to manage permissions for multiple users together.
 
-### Syntax
+For example, instead of granting access to every developer individually, you can create a `developers` group and assign users to it.
 
-```bash
-tar -cf archive.tar Y
-```
+### 5.1 `groupadd` — Create a New Group
 
-Here, `Y` represents the files or directories you want to include.
-
-### Example 1: Archive a Directory
+**Syntax:**
 
 ```bash
-tar -cf application.tar myapp/
+groupadd group_name
 ```
 
-This creates:
+**Example:**
+
+```bash
+sudo groupadd gp1
+```
+
+Creates a new group named `gp1`.
+
+**Verify the group:**
+
+```bash
+getent group gp1
+```
+
+**Example output:**
 
 ```text
-application.tar
+gp1:x:1002:
 ```
 
-The archive contains the complete `myapp` directory.
+**Understanding the output:**
 
-### Example 2: Archive Multiple Files
+| Field | Meaning |
+|---|---|
+| gp1 | Group name |
+| x | Group password placeholder |
+| 1002 | Group ID (GID) |
+| Empty field | Supplementary group members |
 
-```bash
-tar -cf backup.tar app.py config.json deploy.sh
-```
+**DevOps Insight:**
 
-This packages three files into one TAR archive.
-
-### Example 3: Archive Multiple Directories
-
-```bash
-tar -cf company_backup.tar backend/ frontend/ scripts/
-```
-
-This packages all three directories.
-
-### Real-World Scenario
-
-Imagine your company has a backend application with the following structure:
-
-```text
-backend/
-├── app.py
-├── config/
-├── scripts/
-└── logs/
-```
-
-Before modifying the application, you need a backup.
-
-Execute:
-
-```bash
-tar -cf backend_backup.tar backend/
-```
-
-Now verify:
-
-```bash
-ls -lh backend_backup.tar
-```
-
-The application has been packaged into one archive.
-
-**DevOps Insight:** Use TAR when you need to combine files and directories without necessarily compressing them. You can compress the archive separately or use TAR's built-in compression options.
+For a production application, you might create groups such as `developers`, `devops`, and `monitoring` to organize access to different resources.
 
 ---
 
-## 5. `tar -xf` – Extract TAR Archives
+## 6. 👤 Creating Linux Users
 
-**Purpose:** Extracts the contents of an existing TAR archive.
+### 6.1 `useradd` — Create a New User Account
 
-### Syntax
-
-```bash
-tar -xf archive.tar
-```
-
-### Example
-
-Suppose you have:
-
-```text
-backup.tar
-```
-
-Execute:
+**Syntax:**
 
 ```bash
-tar -xf backup.tar
+useradd [options] username
 ```
 
-Linux extracts the archive contents into the current working directory.
+Creates a new Linux user account.
 
-### Extract to a Specific Directory
-
-You can use the `-C` option:
+**Example:**
 
 ```bash
-tar -xf backup.tar -C /opt/backups/
+sudo useradd -c "Alice Bob" -m ab1
 ```
 
-This extracts the archive into `/opt/backups/`.
+Creates a user account named `ab1`, adds the comment `Alice Bob`, and creates the user's home directory.
 
-The destination directory must already exist.
-
-### Real-World Scenario
-
-Imagine your production application deployment has failed.
-
-You previously created:
-
-```text
-myapp_backup.tar
-```
-
-You now need to restore the archived application files.
-
-Execute:
-
-```bash
-mkdir -p /opt/restore
-tar -xf myapp_backup.tar -C /opt/restore/
-```
-
-Now inspect the extracted files:
-
-```bash
-ls -la /opt/restore/
-```
-
-You can verify the restored application before deciding whether to replace the production version.
-
-**DevOps Insight:** Extraction is an important part of backup recovery and deployment rollback. Always verify the archive and destination before extracting files into a production directory.
-
----
-
-## 6. `tar -tf` – List TAR Contents
-
-**Purpose:** Displays the names of files and directories inside a TAR archive without extracting them.
-
-### Syntax
-
-```bash
-tar -tf archive.tar
-```
-
-### Example
-
-```bash
-tar -tf backup.tar
-```
-
-Possible output:
-
-```text
-myapp/
-myapp/app.py
-myapp/config/
-myapp/config/database.conf
-myapp/logs/
-myapp/scripts/
-myapp/scripts/deploy.sh
-```
-
-The contents are displayed without extracting the files.
-
-### Why Is This Useful?
-
-Imagine someone sends you a 2 GB backup archive.
-
-Before extracting it, you want to understand which files are included.
-
-Instead of extracting everything, execute:
-
-```bash
-tar -tf production_backup.tar
-```
-
-You can inspect the archive structure first.
-
-### Display Detailed Information
-
-```bash
-tar -tvf backup.tar
-```
-
-This displays file metadata as well as filenames.
-
-### Real-World Scenario
-
-Your development team provides a deployment package.
-
-Before deploying it on an EC2 instance, you want to check whether it contains the required configuration and application files.
-
-Execute:
-
-```bash
-tar -tf application_release.tar
-```
-
-Verify that the archive contains:
-
-```text
-application/
-application/app.jar
-application/config/
-application/config/application.properties
-```
-
-Only after verifying the contents should you proceed with extraction.
-
-**DevOps Insight:** Inspecting archive contents before extraction helps prevent mistakes during production deployments and backup restoration.
-
----
-
-## 7. `tar -czf` and `tar -xzf` – GZIP Compression
-
-**Purpose:** Creates and extracts TAR archives compressed using GZIP.
-
-A regular TAR archive packages files but does not necessarily reduce their size.
-
-GZIP compression reduces the archive's storage requirements.
-
-### Create a GZIP-Compressed TAR Archive
-
-### Syntax
-
-```bash
-tar -czf archive.tar.gz Y
-```
-
-### Example
-
-```bash
-tar -czf myapp_backup.tar.gz myapp/
-```
-
-This creates:
-
-```text
-myapp_backup.tar.gz
-```
-
-The directory is first packaged into TAR format and then compressed using GZIP.
-
-### Understanding the Options
+**Understanding the options:**
 
 | Option | Meaning |
 |---|---|
-| `-c` | Create archive |
-| `-z` | Use GZIP compression |
-| `-f` | Specify archive filename |
-| `-v` | Display processed files |
+| `-c` | Adds a comment or description to the user account |
+| `-m` | Creates the user's home directory |
+| `ab1` | Username |
 
-### Example with Verbose Output
+**What happens internally?**
 
-```bash
-tar -czvf backup.tar.gz myapp/
-```
-
-This displays files while creating the compressed archive.
-
-### Extract a GZIP-Compressed TAR Archive
-
-### Syntax
+When you execute:
 
 ```bash
-tar -xzf archive.tar.gz
+sudo useradd -c "Alice Bob" -m ab1
 ```
 
-### Example
+Linux generally:
+
+1. Creates a user account named `ab1`.
+2. Assigns a UID.
+3. Creates a primary group according to the system's user-creation configuration.
+4. Creates `/home/ab1`.
+5. Copies default configuration files into the home directory when configured.
+6. Stores the account information in system account databases.
+
+**Verify the user:**
 
 ```bash
-tar -xzf myapp_backup.tar.gz
+id ab1
 ```
 
-This extracts the contents of the compressed TAR archive into the current directory.
-
-### Extract to a Specific Directory
+**Check the home directory:**
 
 ```bash
-mkdir -p /opt/restore
-
-tar -xzf myapp_backup.tar.gz -C /opt/restore/
+ls -ld /home/ab1
 ```
 
-### Inspect the Archive Before Extraction
+**Important:** Creating a user account does not necessarily set a usable login password.
+
+To assign a password:
 
 ```bash
-tar -tzf myapp_backup.tar.gz
+sudo passwd ab1
 ```
 
-This lists the contents without extracting them.
+**DevOps Insight:**
 
-### Real-World Scenario
-
-Imagine you're responsible for a production application on an EC2 instance.
-
-Your application directory is:
-
-```text
-/var/www/myapp/
-```
-
-You need to create a backup that consumes less storage than an ordinary TAR archive.
-
-Execute:
-
-```bash
-tar -czf myapp_backup.tar.gz /var/www/myapp/
-```
-
-Now check its size:
-
-```bash
-ls -lh myapp_backup.tar.gz
-```
-
-The resulting compressed archive can be transferred to another server or stored in an appropriate backup location.
-
-Later, restore it:
-
-```bash
-tar -xzf myapp_backup.tar.gz -C /opt/restore/
-```
-
-**DevOps Insight:** `.tar.gz` is widely used for Linux backups, application distribution, source-code packages, and transferring compressed directory structures.
+When a new developer joins a company, a system administrator can create an individual Linux account instead of sharing a common server login.
 
 ---
 
-## 8. `tar -cjf` and `tar -xjf` – BZIP2 Compression
+## 7. 🗑️ Deleting Linux Users
 
-**Purpose:** Creates and extracts TAR archives compressed using BZIP2.
+### 7.1 `userdel` — Delete a User Account
 
-BZIP2 is another compression algorithm.
-
-It often provides a different compression ratio and speed compared with GZIP. Its performance depends on the data and compression settings.
-
-### Create a BZIP2-Compressed TAR Archive
-
-### Syntax
+**Syntax:**
 
 ```bash
-tar -cjf archive.tar.bz2 Y
+userdel username
 ```
 
-### Example
+Deletes the specified user account.
+
+**Example:**
 
 ```bash
-tar -cjf myapp_backup.tar.bz2 myapp/
+sudo userdel ab1
 ```
 
-This creates:
+Deletes the account named `ab1`.
 
-```text
-myapp_backup.tar.bz2
+**Important:** By default, `userdel` does not remove the user's home directory.
+
+To delete the account and its home directory:
+
+```bash
+sudo userdel -r ab1
 ```
 
-### Understanding the Options
+The `-r` option removes the user's home directory and mail spool where applicable.
+
+**Verify deletion:**
+
+```bash
+id ab1
+```
+
+If the account has been deleted, the command reports that the user does not exist.
+
+<blockquote>
+**⚠️ Production Warning**
+
+Be careful when deleting users from production servers. Their home directories may contain SSH keys, scripts, configuration files, or important data. Always verify ownership and back up required files before deletion.
+</blockquote>
+
+**DevOps Insight:**
+
+When an employee leaves an organization, administrators must remove or disable their access according to the company's offboarding process.
+
+---
+
+## 8. 🔧 Modifying User Accounts
+
+### 8.1 `usermod` — Modify an Existing User
+
+**Syntax:**
+
+```bash
+usermod [options] username
+```
+
+Modifies an existing Linux user account.
+
+### Add a User to a Group
+
+**Example:**
+
+```bash
+sudo usermod -aG gp1 ab1
+```
+
+Adds the user `ab1` to the supplementary group `gp1`.
+
+**Understanding the options:**
 
 | Option | Meaning |
 |---|---|
-| `-c` | Create archive |
-| `-j` | Use BZIP2 compression |
-| `-f` | Specify archive filename |
-| `-v` | Display processed files |
+| `-a` | Append the group instead of replacing existing supplementary groups |
+| `-G` | Specify supplementary group membership |
+| `gp1` | Group name |
+| `ab1` | Username |
 
-### Example with Verbose Output
+**Why are `-aG` important?**
 
-```bash
-tar -cjvf backup.tar.bz2 myapp/
-```
-
-### Extract a BZIP2-Compressed TAR Archive
-
-### Syntax
+Consider this command:
 
 ```bash
-tar -xjf archive.tar.bz2
+sudo usermod -G gp1 ab1
 ```
 
-### Example
+It replaces the user's existing supplementary group memberships with `gp1`.
+
+However:
 
 ```bash
-tar -xjf myapp_backup.tar.bz2
+sudo usermod -aG gp1 ab1
 ```
 
-This extracts the contents into the current directory.
+Adds `gp1` while preserving existing supplementary groups.
 
-### Extract to a Specific Directory
+**Verify group membership:**
 
 ```bash
-mkdir -p /opt/restore
-
-tar -xjf myapp_backup.tar.bz2 -C /opt/restore/
+id ab1
 ```
 
-### Inspect Contents Before Extraction
+Or:
 
 ```bash
-tar -tjf myapp_backup.tar.bz2
+groups ab1
 ```
 
-### Real-World Scenario
+**Important:** The user may need to log out and log back in for the new group membership to become active in an existing session.
 
-Imagine your company maintains large historical application backups.
+**DevOps Insight:**
 
-Your storage team wants to evaluate BZIP2 compression for those backups.
-
-You execute:
+Imagine a developer needs access to a deployment directory owned by the `devops` group. Instead of changing permissions for everyone, an administrator can add that developer to the appropriate group.
 
 ```bash
-tar -cjf historical_backup.tar.bz2 /var/www/myapp/
+sudo usermod -aG devops alice
 ```
 
-You can inspect the resulting archive:
-
-```bash
-ls -lh historical_backup.tar.bz2
-```
-
-If the archive needs to be restored:
-
-```bash
-tar -xjf historical_backup.tar.bz2 -C /opt/restore/
-```
-
-**DevOps Insight:** BZIP2 is another useful compression option. Do not automatically assume it is always smaller or faster than GZIP. Benchmark with your actual files and operational requirements.
+This is a common way to manage access through group-based permissions.
 
 ---
 
-## 9. `gzip` – GZIP Compression Utility
+## 9. 🚀 Real-World Production Scenario
 
-**Purpose:** Compresses individual files using the GZIP compression algorithm.
+### Scenario: Onboarding a New Developer
 
-Unlike `tar`, which packages multiple files and directories into an archive, `gzip` normally compresses an individual file.
+Imagine you are a DevOps engineer responsible for managing a Linux application server.
 
-### Syntax
+A new developer named Alice joins your team. She needs access to application files managed by the `developers` group.
 
-```bash
-gzip filename
-```
-
-### Example
-
-Suppose you have:
-
-```text
-application.log
-```
-
-Execute:
+**Step 1: Check currently logged-in users**
 
 ```bash
-gzip application.log
+who
 ```
 
-The resulting file is:
-
-```text
-application.log.gz
-```
-
-By default, GZIP removes the original uncompressed file after successful compression.
-
-### Understanding What Happened
-
-Before compression:
-
-```text
-application.log
-```
-
-After compression:
-
-```text
-application.log.gz
-```
-
-The original file is replaced by the compressed version.
-
-### Real-World Scenario
-
-Imagine your application generates a large log file.
-
-```text
-/var/log/myapp/application.log
-```
-
-The log file is no longer actively used and needs to be archived.
-
-Execute:
+**Step 2: Check your administrative identity**
 
 ```bash
-gzip /var/log/myapp/application.log
+whoami
 ```
 
-The resulting file is:
-
-```text
-/var/log/myapp/application.log.gz
-```
-
-The file now occupies less storage, depending on its contents.
-
-### Important Option: Preserve the Original File
-
-If you want to keep the original file while creating a compressed copy, use:
+**Step 3: Create the developers group**
 
 ```bash
-gzip -k application.log
+sudo groupadd developers
 ```
 
-The `-k` option keeps the original file.
+If the group already exists, verify it rather than creating it again.
 
-**DevOps Insight:** GZIP is commonly used for compressing individual log files and reducing the storage required for historical data. Production log rotation tools can automate this process.
+```bash
+getent group developers
+```
+
+**Step 4: Create Alice's account**
+
+```bash
+sudo useradd -c "Alice Bob" -m alice
+```
+
+**Step 5: Set Alice's password**
+
+```bash
+sudo passwd alice
+```
+
+**Step 6: Add Alice to the developers group**
+
+```bash
+sudo usermod -aG developers alice
+```
+
+**Step 7: Verify her account and group memberships**
+
+```bash
+id alice
+```
+
+**Step 8: Review login history when required**
+
+```bash
+last alice
+```
+
+**Result:**
+
+Alice now has an individual Linux account and membership in the `developers` group. Access to application files can be managed through group ownership and file permissions.
 
 ---
 
-## 10. `gzip -l` – Display GZIP Information
-
-**Purpose:** Displays information about a GZIP-compressed file.
-
-### Syntax
-
-```bash
-gzip -l filename.gz
-```
-
-### Example
-
-```bash
-gzip -l application.log.gz
-```
-
-Possible output:
-
-```text
-         compressed        uncompressed  ratio uncompressed_name
-                1200                 8000  85.0% application.log
-```
-
-The exact values depend on the file.
-
-### Understanding the Output
-
-| Column | Meaning |
-|---|---|
-| compressed | Compressed file size |
-| uncompressed | Original file size |
-| ratio | Reported compression ratio |
-| uncompressed_name | Original filename |
-
-### Real-World Scenario
-
-Imagine your application generates thousands of historical log files.
-
-Your manager asks you to check how much space compression has saved.
-
-Execute:
-
-```bash
-gzip -l application.log.gz
-```
-
-This displays the compressed and original sizes.
-
-You can use this information to evaluate storage usage.
-
-**DevOps Insight:** `gzip -l` displays compression statistics. It does not list the individual files inside a directory archive. For a `.tar.gz` archive, use `tar -tzf` to inspect the archived filenames.
-
----
-
-## 11. `gzip -d` and `gunzip` – Extract GZIP Files
-
-**Purpose:** Decompresses a GZIP-compressed file and restores the original uncompressed file.
-
-### Method 1: Using `gzip -d`
-
-### Syntax
-
-```bash
-gzip -d filename.gz
-```
-
-### Example
-
-```bash
-gzip -d application.log.gz
-```
-
-This decompresses the file and restores:
-
-```text
-application.log
-```
-
-### Method 2: Using `gunzip`
-
-You can perform the same operation using:
-
-```bash
-gunzip application.log.gz
-```
-
-Both commands decompress the GZIP file.
-
-### Real-World Scenario
-
-Imagine your team has provided a compressed application log from a production server.
-
-The file is:
-
-```text
-application.log.gz
-```
-
-You need to inspect the complete log.
-
-Execute:
-
-```bash
-gunzip application.log.gz
-```
-
-Now inspect the restored file:
-
-```bash
-cat application.log
-```
-
-### Another Useful Option: Read Without Extracting
-
-You can inspect a compressed text file without permanently decompressing it:
-
-```bash
-zcat application.log.gz
-```
-
-Or search it directly:
-
-```bash
-zgrep "ERROR" application.log.gz
-```
-
-**DevOps Insight:** Knowing how to decompress historical logs is useful during production investigations and incident analysis. For quick inspection, `zcat` and `zgrep` can avoid creating a separate uncompressed copy.
-
----
-
-## 12. `bzip2` – BZIP2 Compression Utility
-
-**Purpose:** Compresses individual files using the BZIP2 compression algorithm.
-
-BZIP2 is another Linux compression utility.
-
-### Syntax
-
-```bash
-bzip2 filename
-```
-
-### Example
-
-Suppose you have:
-
-```text
-database_backup.sql
-```
-
-Execute:
-
-```bash
-bzip2 database_backup.sql
-```
-
-The resulting file is:
-
-```text
-database_backup.sql.bz2
-```
-
-By default, BZIP2 removes the original file after successful compression.
-
-### Preserve the Original File
-
-You can use:
-
-```bash
-bzip2 -k database_backup.sql
-```
-
-The `-k` option keeps the original file.
-
-### Real-World Scenario
-
-Imagine your company stores large historical database exports.
-
-You need to compress an individual SQL backup before transferring it to another server.
-
-Execute:
-
-```bash
-bzip2 database_backup.sql
-```
-
-The resulting file is:
-
-```text
-database_backup.sql.bz2
-```
-
-You can then transfer the compressed file using an appropriate secure transfer mechanism.
-
-**DevOps Insight:** BZIP2 is useful for compressing individual files. Compare its compression time and output size against GZIP before selecting it for automated production workloads.
-
----
-
-## 13. `bzip2 -d` and `bunzip2` – Extract BZIP2 Files
-
-**Purpose:** Decompresses BZIP2-compressed files and restores the original file.
-
-### Method 1: Using `bzip2 -d`
-
-### Syntax
-
-```bash
-bzip2 -d filename.bz2
-```
-
-### Example
-
-```bash
-bzip2 -d database_backup.sql.bz2
-```
-
-This restores:
-
-```text
-database_backup.sql
-```
-
-### Method 2: Using `bunzip2`
-
-```bash
-bunzip2 database_backup.sql.bz2
-```
-
-This performs the same decompression operation.
-
-### Real-World Scenario
-
-Imagine you receive a compressed database backup from another server.
-
-The backup file is:
-
-```text
-database_backup.sql.bz2
-```
-
-Before restoring the database, you need to decompress it.
-
-Execute:
-
-```bash
-bunzip2 database_backup.sql.bz2
-```
-
-Now verify:
-
-```bash
-ls -lh database_backup.sql
-```
-
-The original SQL file has been restored.
-
-**DevOps Insight:** Decompression is essential when recovering database backups, restoring archived data, and transferring compressed files between systems.
-
----
-
-## 14. `zip -r` – Create ZIP Archives
-
-**Purpose:** Creates ZIP archives containing files and directories.
-
-ZIP is commonly used for packaging files for transfer between Linux, Windows, and other operating systems.
-
-### Syntax
-
-```bash
-zip -r archive.zip directory/
-```
-
-The `-r` option means recursive.
-
-It includes files and subdirectories.
-
-### Example
-
-Suppose you have:
-
-```text
-myapp/
-├── app.py
-├── config/
-├── logs/
-└── scripts/
-```
-
-Execute:
-
-```bash
-zip -r myapp.zip myapp/
-```
-
-This creates:
-
-```text
-myapp.zip
-```
-
-The archive contains the application directory and its contents.
-
-### Understanding the Command
-
-| Part | Meaning |
-|---|---|
-| `zip` | ZIP utility |
-| `-r` | Include directories recursively |
-| `myapp.zip` | Output archive name |
-| `myapp/` | Directory to package |
-
-### Example: Package Multiple Files
-
-```bash
-zip backup.zip app.py config.json deploy.sh
-```
-
-This packages the specified files into one ZIP archive.
-
-### Real-World Scenario
-
-Imagine your development team needs to transfer a complete application package to a Windows-based testing environment.
-
-Your application directory is:
-
-```text
-/var/www/myapp/
-```
-
-Execute:
-
-```bash
-zip -r application_release.zip /var/www/myapp/
-```
-
-The resulting ZIP archive can be transferred to the testing environment.
-
-**DevOps Insight:** ZIP is useful when sharing deployment packages with teams using different operating systems. Be aware that archives may contain sensitive configuration files, so protect them appropriately.
-
----
-
-## 15. `unzip` – Extract ZIP Archives
-
-**Purpose:** Extracts files from a ZIP archive into a directory.
-
-### Syntax
-
-```bash
-unzip archive.zip
-```
-
-### Example
-
-```bash
-unzip myapp.zip
-```
-
-This extracts the archive contents into the current directory.
-
-### Extract to a Specific Directory
-
-Use the `-d` option:
-
-```bash
-unzip myapp.zip -d /opt/restore/
-```
-
-This extracts the files into `/opt/restore/`.
-
-### Real-World Scenario
-
-Imagine you receive an application deployment package from your development team.
-
-The package is:
-
-```text
-application_release.zip
-```
-
-You need to extract it on an EC2 server.
-
-First, create the destination directory:
-
-```bash
-mkdir -p /opt/releases
-```
-
-Now extract the archive:
-
-```bash
-unzip application_release.zip -d /opt/releases/
-```
-
-Verify the extracted files:
-
-```bash
-ls -la /opt/releases/
-```
-
-### Important Option: Avoid Overwriting Existing Files
-
-If files already exist, `unzip` may prompt you about overwriting them.
-
-You can use:
-
-```bash
-unzip -n application_release.zip -d /opt/releases/
-```
-
-The `-n` option prevents overwriting existing files.
-
-**DevOps Insight:** ZIP extraction is commonly used in application deployment pipelines, especially when deployment artifacts are distributed as ZIP packages.
-
----
-
-## 16. `unzip -l` – List ZIP Contents
-
-**Purpose:** Displays the contents of a ZIP archive without extracting them.
-
-### Syntax
-
-```bash
-unzip -l archive.zip
-```
-
-### Example
-
-```bash
-unzip -l myapp.zip
-```
-
-Possible output:
-
-```text
-Archive:  myapp.zip
-  Length      Date    Time    Name
----------  ---------- -----   ----
-      1024  11-21-2026 10:00   myapp/app.py
-       512  11-21-2026 10:00   myapp/config/database.conf
-      2048  11-21-2026 10:00   myapp/scripts/deploy.sh
----------                     -------
-      3584                     3 files
-```
-
-The command displays filenames and archive metadata.
-
-### Important Difference
-
-| Command | Purpose |
-|---|---|
-| `unzip myapp.zip` | Extracts the ZIP archive |
-| `unzip -l myapp.zip` | Lists archive contents |
-
-### Real-World Scenario
-
-Imagine your company receives a deployment ZIP file from an external development team.
-
-Before extracting it into a production environment, you want to inspect its contents.
-
-Execute:
-
-```bash
-unzip -l application_release.zip
-```
-
-Check whether the archive contains the expected application files.
-
-**DevOps Insight:** Always inspect deployment packages before extracting them into sensitive production directories. Listing an archive is safer than immediately extracting unknown contents.
-
----
-
-# 🚀 Real-World Production Scenario
-
-## Situation: Creating and Restoring an Application Backup on an AWS EC2 Server
-
-Imagine you're a DevOps engineer responsible for a Spring Boot application running on an AWS EC2 Ubuntu instance.
-
-Your application directory looks like this:
-
-```text
-/var/www/myapp/
-│
-├── app.jar
-│
-├── config/
-│   └── application.properties
-│
-├── logs/
-│   └── application.log
-│
-└── scripts/
-    ├── deploy.sh
-    └── backup.sh
-```
-
-Your manager asks you to:
-
-1. Create an application backup before deployment.
-2. Compress the backup to save storage.
-3. Verify the archive contents.
-4. Restore the application into another directory.
-5. Compress individual historical logs.
-6. Package the release as a ZIP archive.
-
-Let's perform the workflow.
-
-### Step 1: Check the Application Directory
-
-```bash
-ls -lh /var/www/myapp/
-```
-
-Verify that the application files exist.
-
-### Step 2: Create a TAR Backup
-
-```bash
-tar -cvf myapp_backup.tar /var/www/myapp/
-```
-
-This packages the application directory into a TAR archive.
-
-### Step 3: Create a GZIP-Compressed Backup
-
-```bash
-tar -czvf myapp_backup.tar.gz /var/www/myapp/
-```
-
-This creates a compressed TAR archive.
-
-### Step 4: Verify the Backup Size
-
-```bash
-ls -lh myapp_backup.tar.gz
-```
-
-Check the resulting archive size.
-
-### Step 5: Inspect the Backup Contents
-
-```bash
-tar -tzf myapp_backup.tar.gz
-```
-
-Verify that the required application files are included.
-
-### Step 6: Restore the Application Backup
-
-Create a restoration directory:
-
-```bash
-mkdir -p /opt/restore
-```
-
-Extract the backup:
-
-```bash
-tar -xzf myapp_backup.tar.gz -C /opt/restore/
-```
-
-Verify the restored directory:
-
-```bash
-ls -la /opt/restore/
-```
-
-### Step 7: Compress an Individual Historical Log
-
-Suppose an old application log is no longer actively written to:
-
-```bash
-gzip /var/www/myapp/logs/application.log
-```
-
-This creates:
-
-```text
-application.log.gz
-```
-
-Remember that the original file is removed after successful compression unless you use `gzip -k`.
-
-### Step 8: Create a ZIP Deployment Package
-
-```bash
-zip -r application_release.zip /var/www/myapp/
-```
-
-This creates a ZIP package containing the application directory.
-
-### Step 9: Inspect the ZIP Package
-
-```bash
-unzip -l application_release.zip
-```
-
-Verify the package contents without extracting it.
-
-### Step 10: Extract the ZIP Package
-
-```bash
-mkdir -p /opt/releases
-
-unzip application_release.zip -d /opt/releases/
-```
-
-Verify:
-
-```bash
-ls -la /opt/releases/
-```
-
-### Final Directory Structure
-
-```text
-/opt/
-│
-├── restore/
-│   └── var/
-│       └── www/
-│           └── myapp/
-│
-└── releases/
-    └── var/
-        └── www/
-            └── myapp/
-
-/var/www/
-└── myapp/
-
-/backup/
-└── myapp_backup.tar.gz
-```
-
-The exact extracted directory structure depends on the paths stored inside the archive.
-
-### What Did You Learn?
-
-You used:
-
-- `tar` to package files and directories.
-- `tar -v` to display processed files.
-- `tar -cf` to create TAR archives.
-- `tar -xf` to extract TAR archives.
-- `tar -tf` to inspect TAR contents.
-- `tar -czf` to create GZIP-compressed TAR archives.
-- `tar -xzf` to extract GZIP-compressed TAR archives.
-- `tar -cjf` to create BZIP2-compressed TAR archives.
-- `tar -xjf` to extract BZIP2-compressed TAR archives.
-- `gzip` to compress individual files.
-- `gzip -l` to inspect compression information.
-- `gzip -d` and `gunzip` to decompress GZIP files.
-- `bzip2` to compress individual files.
-- `bzip2 -d` and `bunzip2` to decompress BZIP2 files.
-- `zip -r` to create ZIP archives.
-- `unzip` to extract ZIP archives.
-- `unzip -l` to inspect ZIP contents.
-
-**DevOps Insight:** Backups are not complete just because an archive has been created. A production engineer should also verify archive integrity, test restoration, preserve required permissions, and maintain an appropriate backup retention policy.
-
----
-
-# 📌 Quick Command Reference
+## 10. 📌 Quick Command Reference
 
 | Command | Description |
 |---|---|
-| `tar` | Manipulates TAR archives |
-| `tar -v` | Enables verbose output |
-| `tar -cf archive.tar Y` | Creates a TAR archive |
-| `tar -xf archive.tar` | Extracts a TAR archive |
-| `tar -tf archive.tar` | Lists TAR contents |
-| `tar -czf archive.tar.gz Y` | Creates a GZIP-compressed TAR archive |
-| `tar -xzf archive.tar.gz` | Extracts a GZIP-compressed TAR archive |
-| `tar -cjf archive.tar.bz2 Y` | Creates a BZIP2-compressed TAR archive |
-| `tar -xjf archive.tar.bz2` | Extracts a BZIP2-compressed TAR archive |
-| `gzip Y` | Compresses an individual file |
-| `gzip -l Y.gz` | Displays GZIP compression information |
-| `gzip -d Y.gz` | Decompresses a GZIP file |
-| `gunzip Y.gz` | Decompresses a GZIP file |
-| `bzip2 Y` | Compresses an individual file |
-| `bzip2 -d Y.bz2` | Decompresses a BZIP2 file |
-| `bunzip2 Y.bz2` | Decompresses a BZIP2 file |
-| `zip -r Z.zip Y` | Creates a ZIP archive recursively |
-| `unzip Z.zip` | Extracts a ZIP archive |
-| `unzip -l Z.zip` | Lists ZIP archive contents |
+| `who` | Display currently logged-in users |
+| `w` | Display logged-in users and their activities |
+| `users` | List current users |
+| `whoami` | Display the current username |
+| `id` | Display user and group IDs |
+| `last` | Display previous login sessions |
+| `groupadd gp1` | Create a group named `gp1` |
+| `useradd -c "Alice Bob" -m ab1` | Create user `ab1` with a comment and home directory |
+| `userdel ab1` | Delete user `ab1` |
+| `usermod -aG gp1 ab1` | Add user `ab1` to group `gp1` |
+| `passwd ab1` | Set or change the password for `ab1` |
+| `groups ab1` | Display groups associated with `ab1` |
+| `getent group gp1` | Display information about group `gp1` |
 
 ---
 
-# 🎯 Interview Questions
+## 11. 🎯 Interview Questions
 
-### Basic Questions
+### Basic Level
 
-1. What is the difference between archiving and compression?
-2. What is the purpose of the `tar` command?
-3. What does the `-c` option do in TAR?
-4. What does the `-x` option do?
-5. What is the purpose of the `-f` option?
-6. What does the `-v` option do?
-7. What is the difference between `.tar` and `.tar.gz`?
-8. What is the purpose of the `gzip` command?
-9. What is the purpose of the `bzip2` command?
-10. What is the purpose of the `zip -r` command?
+**Q1. What is the difference between `who` and `whoami`?**
 
-### Intermediate Questions
+- `who` displays users currently logged into the system.
+- `whoami` displays the username of the account executing the command.
 
-11. How do you create a TAR archive?
-12. How do you extract a TAR archive?
-13. How do you list archive contents without extracting them?
-14. What is the difference between `tar -czf` and `tar -cjf`?
-15. What is the difference between `gzip` and `tar -czf`?
-16. What is the difference between `gzip -d` and `gunzip`?
-17. What is the difference between `bzip2 -d` and `bunzip2`?
-18. How do you extract a TAR archive into a specific directory?
-19. How do you inspect a ZIP archive without extracting it?
-20. Why might you use `gzip -k` instead of ordinary `gzip`?
+**Q2. What does the `id` command display?**
 
-### Senior DevOps Engineer Scenario Questions
+It displays the user's UID, primary GID, and supplementary group memberships.
 
-21. Your production application is running on an EC2 instance. How would you create a complete backup of its application directory?
+**Q3. What is the purpose of `groupadd`?**
 
-22. Your application backup is 2 GB. How would you package and compress it to reduce storage requirements?
+It creates a new Linux group.
 
-23. A developer sends you a `.tar.gz` deployment package. How would you inspect its contents before extraction?
+**Q4. What is the purpose of `useradd -m`?**
 
-24. Your production deployment fails. You have a previous `.tar.gz` backup. How would you restore it into a separate directory before replacing production files?
+It creates a user account and its home directory.
 
-25. Your server contains large historical log files. How would you compress individual log files without manually opening each one?
+### Intermediate Level
 
-26. Your team needs to transfer a deployment package to Windows users. Which archive format could you use?
+**Q5. What is the difference between `userdel` and `userdel -r`?**
 
-27. You receive a ZIP archive from another team. How would you list its contents before extracting it?
+- `userdel` removes the user account.
+- `userdel -r` also removes the user's home directory and mail spool where applicable.
 
-28. Your backup archive was created successfully, but you want to ensure it can actually be restored. What verification steps would you perform?
+**Q6. What is the difference between `-G` and `-aG` in `usermod`?**
 
-29. What could happen if you extract an untrusted archive directly into `/` on a production server?
+- `-G` replaces supplementary group memberships.
+- `-aG` appends a group while preserving existing supplementary memberships.
 
-30. Why should production backup procedures include restoration testing?
+**Q7. What is the difference between UID and GID?**
 
----
+- UID identifies a Linux user.
+- GID identifies a Linux group.
 
-# 🧪 Hands-On Practice
+### Senior DevOps Scenario-Based Questions
 
-Try these commands in your Linux environment.
+**Q8. A developer says they cannot access a directory even after you added them to the required group. What would you check?**
 
-- [ ] Create a directory named `myapp`.
-- [ ] Create three files inside it.
-- [ ] Create a TAR archive named `myapp.tar`.
-- [ ] Create a verbose TAR archive using `-cvf`.
-- [ ] List its contents using `tar -tf`.
-- [ ] Extract the archive using `tar -xf`.
-- [ ] Create a GZIP-compressed TAR archive using `tar -czf`.
-- [ ] Extract it using `tar -xzf`.
-- [ ] Create a BZIP2-compressed TAR archive using `tar -cjf`.
-- [ ] Extract it using `tar -xjf`.
-- [ ] Compress an individual file using `gzip`.
-- [ ] Inspect its compression information using `gzip -l`.
-- [ ] Decompress it using `gunzip`.
-- [ ] Compress another file using `bzip2`.
-- [ ] Decompress it using `bunzip2`.
-- [ ] Create a ZIP archive using `zip -r`.
-- [ ] List ZIP contents using `unzip -l`.
-- [ ] Extract the ZIP archive into another directory.
+Possible troubleshooting steps:
+
+```bash
+id alice
+groups alice
+ls -ld /var/www/application
+```
+
+Check whether:
+
+- The user belongs to the correct group.
+- The directory has the correct group ownership.
+- Group permissions allow the required operation.
+- The user has started a new login session to refresh group membership.
+
+**Q9. A new employee joins your company. How would you provide secure Linux server access?**
+
+I would:
+
+1. Create an individual user account.
+2. Assign a secure authentication method.
+3. Add the user to only the required groups.
+4. Configure appropriate directory permissions.
+5. Verify access using `id` and permission checks.
+6. Follow the organization's access-review and auditing procedures.
+
+**Q10. Why should developers not share a common Linux account?**
+
+Individual accounts provide accountability, easier auditing, separate permissions, and better access revocation when someone leaves the organization.
 
 ---
 
-# 🏁 Key Takeaway
+## 12. 🧪 Hands-On Practice
 
-Linux archive and compression commands are essential for managing application backups, deployment packages, and historical data.
+Complete these exercises on a Linux virtual machine or a test environment.
 
-For a DevOps engineer, these commands are important for:
+- [ ] Run `who` and identify logged-in users.
+- [ ] Run `w` and inspect user activity.
+- [ ] Run `users` and list current users.
+- [ ] Run `whoami` to identify your current account.
+- [ ] Run `id` and identify your UID and GID.
+- [ ] Run `last` and inspect login history.
+- [ ] Create a group named `gp1`.
+- [ ] Create a user named `ab1` with a home directory.
+- [ ] Assign a password to `ab1`.
+- [ ] Add `ab1` to `gp1` using `usermod -aG`.
+- [ ] Verify the user's group membership using `id ab1`.
+- [ ] Delete the test user after completing the exercises.
 
-- Application backup and recovery.
-- Deployment package management.
-- Storage optimization.
-- Log archiving.
-- Server-to-server file transfers.
-- Disaster recovery.
-- Release management.
+**Practice commands:**
 
-**Learning approach:** Understand the command, practise it in a Linux environment, and then apply it to a realistic production scenario.
+```bash
+sudo groupadd gp1
+
+sudo useradd -c "Alice Bob" -m ab1
+
+sudo passwd ab1
+
+sudo usermod -aG gp1 ab1
+
+id ab1
+
+groups ab1
+
+sudo userdel -r ab1
+```
 
 ---
 
-**Progress:** Linux Archives and Compression 🔄 In Progress
+## 🏁 Key Takeaway
 
-**Next:** Continue with the next Linux command category.
+User and group management is one of the fundamental responsibilities of a Linux administrator and DevOps engineer.
 
-*Learning Linux one topic at a time, from fundamentals to production-level DevOps engineering.*
+Understanding these commands helps you:
+
+- Identify users accessing a server.
+- Monitor login activity.
+- Understand user and group identities.
+- Create and manage user accounts.
+- Organize permissions through groups.
+- Control access to production infrastructure.
+
+**Remember:** In production environments, follow the principle of least privilege. Give every user only the access required to perform their job.
+
+---
+
+**Next Topic:** Continue with the next Linux command category in your learning roadmap.
